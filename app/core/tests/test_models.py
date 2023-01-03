@@ -3,6 +3,12 @@ from django.contrib.auth import get_user_model
 from decimal import Decimal
 
 from core import models
+from unittest.mock import patch
+
+def create_user(email='test@example.com',password='testpass123'):
+    """Create and return new user"""
+
+    return get_user_model().objects.create_user(email, password)
 
 class ModelTests(TestCase):
     """Test models"""
@@ -54,10 +60,7 @@ class ModelTests(TestCase):
     def test_create_recipe_success(self):
         """Test create receipe successfully."""
 
-        user = get_user_model().objects.create_user(
-            'test@example.com',
-            'testpass123'
-        )
+        user = create_user()
 
         recipe = models.Recipe.objects.create(
             user=user,
@@ -68,3 +71,24 @@ class ModelTests(TestCase):
         )
 
         self.assertEqual(str(recipe), recipe.title)
+
+    def test_create_tag(self):
+        """Test tag create successfully."""
+
+        user = create_user()
+
+        tag = models.Tag.objects.create(
+            user=user,
+            name='Sample Tag'
+        )
+
+        self.assertEqual(str(tag), tag.name)
+
+    @patch('core.models.uuid.uuid4')
+    def test_recipe_file_name_uuid(self, mock_uuid):
+        """Test generating image path."""
+        uuid = 'test-uuid'
+        mock_uuid.return_value = uuid
+        file_path = models.recipe_image_file_path(None, 'example.jpg')
+
+        self.assertEqual(file_path, f'uploads/recipe/{uuid}.jpg')
